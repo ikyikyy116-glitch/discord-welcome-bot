@@ -1,4 +1,10 @@
-const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
+// ===== GLOBAL ERROR HANDLER (ANTI CRASH) =====
+process.on("unhandledRejection", console.error);
+process.on("uncaughtException", console.error);
+
+require('dotenv').config();
+
+const { Client, GatewayIntentBits, EmbedBuilder, ChannelType } = require('discord.js');
 
 const client = new Client({
     intents: [
@@ -7,53 +13,61 @@ const client = new Client({
     ]
 });
 
+// ===== BOT READY =====
 client.on("clientReady", () => {
-    console.log(`Bot online sebagai ${client.user.tag}`);
+    console.log(`✅ Bot online sebagai ${client.user.tag}`);
 });
 
-// MEMBER MASUK
+// ===== MEMBER MASUK =====
 client.on("guildMemberAdd", async (member) => {
+    try {
+        const channel = member.guild.channels.cache.find(
+            ch => ch.name === "welcome" && ch.type === ChannelType.GuildText
+        );
 
-    const channel = member.guild.channels.cache.find(
-        ch => ch.name === "welcome"
-    );
+        if (!channel) return console.log("⚠ Channel welcome tidak ditemukan");
 
-    if (!channel) return;
+        const embed = new EmbedBuilder()
+            .setColor("#00ff88")
+            .setTitle("🎉 Welcome!")
+            .setDescription(`Halo ${member} 👋\nSelamat datang di **${member.guild.name}**`)
+            .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
+            .addFields(
+                { name: "Total Member", value: `${member.guild.memberCount}`, inline: true }
+            )
+            .setTimestamp();
 
-    const embed = new EmbedBuilder()
-        .setColor("#00ff88")
-        .setTitle("🎉 Welcome!")
-        .setDescription(`Halo ${member} 👋\nSelamat datang di **${member.guild.name}**`)
-        .setThumbnail(member.user.displayAvatarURL())
-        .addFields(
-            { name: "Total Member", value: `${member.guild.memberCount}`, inline: true }
-        )
-        .setTimestamp();
+        await channel.send({ embeds: [embed] });
 
-    channel.send({ embeds: [embed] });
+    } catch (err) {
+        console.error("Error di guildMemberAdd:", err);
+    }
 });
 
-// MEMBER KELUAR
+// ===== MEMBER KELUAR =====
 client.on("guildMemberRemove", async (member) => {
+    try {
+        const channel = member.guild.channels.cache.find(
+            ch => ch.name === "goodbye" && ch.type === ChannelType.GuildText
+        );
 
-    const channel = member.guild.channels.cache.find(
-        ch => ch.name === "goodbye"
-    );
+        if (!channel) return console.log("⚠ Channel goodbye tidak ditemukan");
 
-    if (!channel) return;
+        const embed = new EmbedBuilder()
+            .setColor("#ff4444")
+            .setTitle("👋 Goodbye!")
+            .setDescription(`${member.user.tag} telah keluar dari server.`)
+            .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
+            .addFields(
+                { name: "Sisa Member", value: `${member.guild.memberCount}`, inline: true }
+            )
+            .setTimestamp();
 
-    const embed = new EmbedBuilder()
-        .setColor("#ff4444")
-        .setTitle("👋 Goodbye!")
-        .setDescription(`${member.user.tag} telah keluar dari server.`)
-        .setThumbnail(member.user.displayAvatarURL())
-        .addFields(
-            { name: "Sisa Member", value: `${member.guild.memberCount}`, inline: true }
-        )
-        .setTimestamp();
+        await channel.send({ embeds: [embed] });
 
-    channel.send({ embeds: [embed] });
+    } catch (err) {
+        console.error("Error di guildMemberRemove:", err);
+    }
 });
 
-require('dotenv').config()
-client.login(process.env.TOKEN)
+client.login(process.env.TOKEN);
